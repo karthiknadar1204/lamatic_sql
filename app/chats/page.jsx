@@ -13,6 +13,7 @@ const Page = () => {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const validateInputs = () => {
     const postgresUrlRegex = /^postgres(ql)?:\/\/[^\s]+$/
@@ -63,6 +64,7 @@ const Page = () => {
       setShowModal(false)
       setUrl('')
       setName('')
+      setRefreshKey(prev => prev + 1)
 
     } catch (err) {
       setError(err.message)
@@ -81,7 +83,7 @@ const Page = () => {
           <Plus className="w-12 h-12 text-gray-400" />
         </div>
 
-        <Connections />
+        <Connections refreshTrigger={refreshKey} />
       </div>
 
       {showModal && (

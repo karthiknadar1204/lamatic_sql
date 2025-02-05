@@ -7,8 +7,36 @@ import { db } from "@/configs/db";
 import { eq, and } from "drizzle-orm";
 import { chats, dbConnections } from "@/configs/schema";
 
+const CHUNK_SIZE = 4000; // Safe size under the 8192 token limit
+
+function chunkData(data) {
+  const chunks = [];
+  let currentChunk = [];
+  let currentSize = 0;
+
+  for (const table of data) {
+    const tableString = JSON.stringify(table);
+    const tableSize = tableString.length;
+
+    if (currentSize + tableSize > CHUNK_SIZE) {
+      chunks.push(currentChunk);
+      currentChunk = [table];
+      currentSize = tableSize;
+    } else {
+      currentChunk.push(table);
+      currentSize += tableSize;
+    }
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
+
 export async function embeddings(data) {
-  console.log(data)
+  console.log(data);
   const user = await currentUser();
   if (!user) return null;
 
@@ -17,29 +45,44 @@ export async function embeddings(data) {
   });
 
   try {
-
     const schemaText = data.tables.map(t => ({
       tableName: t.tableName,
       columns: t.columns.map(c => `${c.column_name} (${c.data_type})`).join(', ')
     }));
 
-    const dataText = data.tables.map(t => ({
+    const dataChunks = chunkData(data.tables.map(t => ({
       tableName: t.tableName,
       sampleData: t.data
-    }));
+    })));
 
-
+    // Generate schema embedding
     const schemaEmbedding = await openai.embeddings.create({
       model: "text-embedding-ada-002",
       input: JSON.stringify(schemaText)
     });
 
-    const dataEmbedding = await openai.embeddings.create({
-      model: "text-embedding-ada-002",
-      input: JSON.stringify(dataText)
-    });
+    // Generate embeddings for each data chunk
+    const dataEmbeddings = await Promise.all(
+      dataChunks.map(async (chunk, index) => {
+        const embedding = await openai.embeddings.create({
+          model: "text-embedding-ada-002",
+          input: JSON.stringify(chunk)
+        });
+        return {
+          id: `data-${String(data.id)}-${index}`,
+          values: embedding.data[0].embedding,
+          metadata: {
+            type: 'data',
+            connectionId: String(data.id),
+            connectionName: data.connectionName,
+            timestamp: new Date().toISOString(),
+            data: JSON.stringify(chunk)
+          }
+        };
+      })
+    );
 
-
+    // Upsert all embeddings to Pinecone
     await index.upsert([
       {
         id: `schema-${String(data.id)}`,
@@ -52,29 +95,16 @@ export async function embeddings(data) {
           schema: JSON.stringify(schemaText)
         },
       },
-      {
-        id: `data-${String(data.id)}`,
-        values: dataEmbedding.data[0].embedding,
-        metadata: {
-          type: 'data',
-          connectionId: String(data.id),
-          connectionName: data.connectionName,
-          timestamp: new Date().toISOString(),
-          data: JSON.stringify(dataText)
-        },
-      }
+      ...dataEmbeddings
     ]);
 
-    console.log("Pinecone upsert successful for both schema and data");
+    console.log("Pinecone upsert successful for schema and all data chunks");
     return true;
   } catch (error) {
     console.error("Error generating embeddings:", error);
     throw error;
   }
 }
-
-
-
 
 export async function getDbData(id) {
   const data = await db.select().from(dbConnections).where(eq(dbConnections.id, id));
@@ -117,8 +147,6 @@ export async function getQueryEmbeddings(message, connectionId) {
     throw error;
   }
 }
-
-
 
 export async function getChatHistory(connectionId) {
   const chatHistory = await db.select().from(chats).where(eq(chats.connectionId, connectionId));

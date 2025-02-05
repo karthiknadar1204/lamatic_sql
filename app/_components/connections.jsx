@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 
-const Connections = () => {
+const Connections = ({ refreshTrigger = 0 }) => {
   const router = useRouter()
   const { user } = useUser()
   const [connections, setConnections] = useState([])
@@ -30,7 +30,7 @@ const Connections = () => {
     if (user) {
       fetchConnections()
     }
-  }, [user])
+  }, [user, refreshTrigger])
 
   if (loading) {
     return <div>Loading connections...</div>

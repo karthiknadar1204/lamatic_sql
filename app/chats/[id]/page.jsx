@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { getDbData } from '@/app/actions/chat'
 import { submitChat } from '@/app/actions/chatAction'
 import ChatPanel from '@/app/_components/ChatPanel'
@@ -10,6 +10,7 @@ import SchemaViewer from '@/app/_components/SchemaViewer'
 
 const Page = () => {
   const { id } = useParams()
+  const router = useRouter()
   
   const chatPanelRef = useRef(null)
 
@@ -58,6 +59,12 @@ const Page = () => {
 
   return (
     <div>
+      <button
+        onClick={() => router.push('/chats')}
+        className="mb-4 p-2 text-gray-600 hover:text-gray-800 flex items-center gap-2"
+      >
+        ← Back to Chats
+      </button>
       <h1>Chat</h1>
       <SchemaViewer data={data} />
       <ChatPanel 
