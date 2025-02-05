@@ -6,10 +6,13 @@ import { getDbData } from '@/app/actions/chat'
 import { submitChat } from '@/app/actions/chatAction'
 import ChatPanel from '@/app/_components/ChatPanel'
 import { Loader2 } from 'lucide-react'
+import SchemaViewer from '@/app/_components/SchemaViewer'
 
 const Page = () => {
   const { id } = useParams()
+  
   const chatPanelRef = useRef(null)
+
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -20,6 +23,7 @@ const Page = () => {
     const fetchData = async () => {
       try {
         const result = await getDbData(id)
+        console.log(result)
         setData(result)
       } catch (err) {
         setError(err.message)
@@ -55,6 +59,7 @@ const Page = () => {
   return (
     <div>
       <h1>Chat</h1>
+      <SchemaViewer data={data} />
       <ChatPanel 
         ref={chatPanelRef}
         connectionId={id} 
