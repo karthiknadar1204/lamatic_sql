@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { getChatHistory } from '../actions/chat'
 import { submitChat } from '../actions/chatAction'
 import Message from './messages/Message'
+import { UserButton } from '@clerk/nextjs'
+import { Bot } from 'lucide-react'
 
 const ChatPanel = ({ connectionId }) => {
   const [messages, setMessages] = useState([])
@@ -46,7 +48,11 @@ const ChatPanel = ({ connectionId }) => {
   return (
     <div className="flex flex-col gap-6 pb-24">
       {messages.map((msg, index) => (
-        <Message key={index} message={msg} onSubmit={handleSubmit} />
+        <Message 
+          key={`${msg.id}-${index}`} 
+          message={msg} 
+          onSubmit={handleSubmit} 
+        />
       ))}
     </div>
   )

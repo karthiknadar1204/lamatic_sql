@@ -3,6 +3,8 @@
 import { AnalysisMessage } from './AnalysisMessage'
 import { QuestionMessage } from './QuestionMessage'
 import { VisualizationMessage } from './VisualizationMessage'
+import { UserButton } from '@clerk/nextjs'
+import { Bot } from 'lucide-react'
 
 const Message = ({ message, onSubmit }) => {
   let parsedResponse
@@ -23,13 +25,17 @@ const Message = ({ message, onSubmit }) => {
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
-      <div className="flex justify-end">
+      <div className="flex justify-end items-start gap-2">
         <div className="bg-blue-100 rounded-lg p-4 max-w-[80%]">
           <p className="text-sm">{message.message}</p>
         </div>
+        <UserButton />
       </div>
 
-      <div className="flex justify-start">
+      <div className="flex justify-start items-start gap-2">
+        <div className="bg-gray-100 p-2 rounded-full">
+          <Bot className="w-6 h-6" />
+        </div>
         {messageType === 'question' ? (
           <QuestionMessage response={parsedResponse} onSubmit={onSubmit} />
         ) : messageType === 'visualization' ? (

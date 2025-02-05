@@ -1,7 +1,25 @@
 'use client'
 
+import PieChart from '../charts/PieChart';
+
 export const VisualizationMessage = ({ response }) => {
-  const content = response.data?.content || response.content
+  const content = response.data?.content || response.content;
+  const visualization = response.data?.visualization || response.visualization;
+
+  const renderVisualization = () => {
+    if (visualization?.chartType === 'pie') {
+      return (
+        <div className="mt-4 bg-white p-4 rounded-lg shadow-sm">
+          <PieChart 
+            data={visualization.data}
+            width={400}
+            height={400}
+          />
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="bg-gray-100 rounded-lg p-4 max-w-[80%]">
@@ -11,13 +29,12 @@ export const VisualizationMessage = ({ response }) => {
         <div className="mt-4 space-y-2">
           {content.details.map((detail, index) => (
             <div key={index} className="p-3 bg-white rounded-md shadow-sm">
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">{detail.split(':')[0]}:</span>
-                {detail.split(':')[1]}
-              </p>
+              <p className="text-sm text-gray-700">{detail}</p>
             </div>
           ))}
         </div>
+
+        {renderVisualization()}
 
         {content.metrics && Object.keys(content.metrics).length > 0 && (
           <div className="mt-4 pt-3 border-t border-gray-200">
@@ -34,5 +51,5 @@ export const VisualizationMessage = ({ response }) => {
         )}
       </div>
     </div>
-  )
-} 
+  );
+}; 
