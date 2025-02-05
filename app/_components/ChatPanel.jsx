@@ -4,18 +4,16 @@ import React, { useEffect, useState } from 'react'
 import { getChatHistory } from '../actions/chat'
 import { submitChat } from '../actions/chatAction'
 import Message from './messages/Message'
-import { UserButton } from '@clerk/nextjs'
-import { Bot } from 'lucide-react'
 
-const ChatPanel = ({ connectionId }) => {
+const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         const previousChats = await getChatHistory(connectionId)
-        console.log(previousChats)
         setMessages(previousChats)
       } catch (error) {
         console.error('Error fetching messages:', error)
@@ -28,6 +26,24 @@ const ChatPanel = ({ connectionId }) => {
   }, [connectionId])
 
   const handleSubmit = async (input) => {
+    setIsSubmitting(true)
+    
+
+    const optimisticMessage = {
+      id: Date.now(),
+      message: input,
+      response: JSON.stringify({
+        type: 'loading',
+        content: {
+          summary: 'Thinking...',
+          details: ['Processing your request...'],
+        }
+      }),
+      temporary: true
+    }
+    
+    setMessages(prev => [...prev, optimisticMessage])
+
     const formData = new FormData()
     formData.append('input', input)
     formData.append('connectionId', connectionId)
@@ -35,13 +51,28 @@ const ChatPanel = ({ connectionId }) => {
     try {
       const response = await submitChat(formData)
       if (!response.error) {
-        const updatedChats = await getChatHistory(connectionId)
-        setMessages(updatedChats)
+
+        setMessages(prev => {
+          const filtered = prev.filter(msg => !msg.temporary)
+          return [...filtered, {
+            id: response.id,
+            message: input,
+            response: JSON.stringify(response.response)
+          }]
+        })
       }
     } catch (error) {
       console.error('Error submitting chat:', error)
+
+      setMessages(prev => prev.filter(msg => !msg.temporary))
+    } finally {
+      setIsSubmitting(false)
     }
   }
+
+  React.useImperativeHandle(ref, () => ({
+    handleSubmit
+  }))
 
   if (loading) return <div>Loading messages...</div>
 
@@ -51,11 +82,13 @@ const ChatPanel = ({ connectionId }) => {
         <Message 
           key={`${msg.id}-${index}`} 
           message={msg} 
-          onSubmit={handleSubmit} 
+          isLoading={msg.temporary}
         />
       ))}
     </div>
   )
-}
+})
+
+ChatPanel.displayName = 'ChatPanel'
 
 export default ChatPanel

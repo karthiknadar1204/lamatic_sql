@@ -1,12 +1,13 @@
 'use client'
 
 import { AnalysisMessage } from './AnalysisMessage'
+import { LoadingMessage } from './LoadingMessage'
 import { QuestionMessage } from './QuestionMessage'
 import { VisualizationMessage } from './VisualizationMessage'
 import { UserButton } from '@clerk/nextjs'
 import { Bot } from 'lucide-react'
 
-const Message = ({ message, onSubmit }) => {
+const Message = ({ message, onSubmit, isLoading }) => {
   let parsedResponse
   try {
     parsedResponse = typeof message.response === 'string' 
@@ -17,11 +18,13 @@ const Message = ({ message, onSubmit }) => {
     return null
   }
 
-  const messageType = parsedResponse.question 
-    ? 'question' 
-    : parsedResponse.type === 'visualization'
-    ? 'visualization'
-    : parsedResponse.type
+  const messageType = isLoading 
+    ? 'loading'
+    : parsedResponse.question 
+      ? 'question' 
+      : parsedResponse.type === 'visualization'
+        ? 'visualization'
+        : parsedResponse.type
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
@@ -36,7 +39,9 @@ const Message = ({ message, onSubmit }) => {
         <div className="bg-gray-100 p-2 rounded-full">
           <Bot className="w-6 h-6" />
         </div>
-        {messageType === 'question' ? (
+        {messageType === 'loading' ? (
+          <LoadingMessage />
+        ) : messageType === 'question' ? (
           <QuestionMessage response={parsedResponse} onSubmit={onSubmit} />
         ) : messageType === 'visualization' ? (
           <VisualizationMessage response={parsedResponse} />

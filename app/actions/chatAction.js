@@ -127,13 +127,11 @@ export async function submitChat(formData) {
 
     console.log('Generated response:', response);
 
-    // Save the chat before returning
     try {
       await saveChat(userInput, response, parseInt(connectionId));
       console.log('Chat saved successfully');
     } catch (saveError) {
       console.error('Error saving chat:', saveError);
-      // Continue even if save fails
     }
 
     return {
