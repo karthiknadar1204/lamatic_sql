@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import { StoreUser } from "./actions/user";
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const {user} = useUser();
+  const router = useRouter();
   
   if (user) {
     StoreUser(user.id, user.firstName, user.primaryEmailAddress?.emailAddress);
@@ -16,13 +18,22 @@ export default function Home() {
       <div className="absolute top-4 right-4">
         <SignedOut>
           <SignInButton mode="modal">
-            <button className="rounded-full bg-foreground text-background px-4 py-2 text-sm hover:bg-[#383838] dark:hover:bg-[#ccc]">
+            <button type="button" className="rounded-full bg-foreground text-background px-4 py-2 text-sm hover:bg-[#383838] dark:hover:bg-[#ccc]">
               Sign In
             </button>
           </SignInButton>
         </SignedOut>
         <SignedIn>
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => router.push('/chats')}
+              className="rounded-full bg-foreground text-background px-4 py-2 text-sm hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            >
+              Chat
+            </button>
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </SignedIn>
       </div>
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">

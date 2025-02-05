@@ -13,9 +13,14 @@
   "dependencies": {
     "@clerk/nextjs": "^6.11.0",
     "@neondatabase/serverless": "^0.10.4",
+    "@pinecone-database/pinecone": "^4.1.0",
+    "ai": "^4.1.18",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.39.1",
+    "lucide-react": "^0.474.0",
     "next": "15.1.6",
+    "openai": "^4.82.0",
+    "pg": "^8.13.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
