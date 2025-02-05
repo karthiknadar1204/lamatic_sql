@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import { index } from "@/lib/pinecone";
 import { db } from "@/configs/db";
 import { eq, and } from "drizzle-orm";
+import { dbConnections } from "@/configs/schema";
 
 export async function embeddings(data) {
   console.log(data)
@@ -24,7 +25,7 @@ export async function embeddings(data) {
 
     const dataText = data.tables.map(t => ({
       tableName: t.tableName,
-      sampleData: t.data.slice(0, 5) 
+      sampleData: t.data
     }));
 
 
@@ -68,6 +69,51 @@ export async function embeddings(data) {
     return true;
   } catch (error) {
     console.error("Error generating embeddings:", error);
+    throw error;
+  }
+}
+
+
+
+
+export async function getDbData(id) {
+  const data = await db.select().from(dbConnections).where(eq(dbConnections.id, id));
+  return data;
+}
+
+export async function getQueryEmbeddings(message, connectionId) {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+
+  try {
+    const questionEmbedding = await openai.embeddings.create({
+      model: "text-embedding-ada-002",
+      input: message
+    });
+
+    const queryResult = await index.query({
+      vector: questionEmbedding.data[0].embedding,
+      topK: 10,
+      filter: {
+        connectionId: { $eq: String(connectionId) }
+      },
+      includeMetadata: true,
+      includeValues: true
+    });
+
+    const schemaInfo = queryResult.matches.find(m => m.metadata.type === 'schema')?.metadata?.schema || "[]";
+    const dataInfo = queryResult.matches.find(m => m.metadata.type === 'data')?.metadata?.data || "[]";
+
+    return {
+      schema: JSON.parse(schemaInfo || "[]"),
+      sampleData: JSON.parse(dataInfo || "[]").map(table => ({
+        tableName: table.tableName,
+        sampleData: table.sampleData
+      }))
+    };
+  } catch (error) {
+    console.error("Error getting embeddings:", error);
     throw error;
   }
 }
