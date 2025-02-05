@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import { index } from "@/lib/pinecone";
 import { db } from "@/configs/db";
 import { eq, and } from "drizzle-orm";
-import { dbConnections } from "@/configs/schema";
+import { chats, dbConnections } from "@/configs/schema";
 
 export async function embeddings(data) {
   console.log(data)
@@ -116,4 +116,11 @@ export async function getQueryEmbeddings(message, connectionId) {
     console.error("Error getting embeddings:", error);
     throw error;
   }
+}
+
+
+
+export async function getChatHistory(connectionId) {
+  const chatHistory = await db.select().from(chats).where(eq(chats.connectionId, connectionId));
+  return chatHistory;
 }

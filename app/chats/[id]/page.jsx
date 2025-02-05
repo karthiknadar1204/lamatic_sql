@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { getDbData } from '@/app/actions/chat'
 import { submitChat } from '@/app/actions/chatAction'
+import ChatPanel from '@/app/_components/ChatPanel'
 
 const Page = () => {
   const { id } = useParams()
@@ -40,7 +41,6 @@ const Page = () => {
       if (response.error) {
         setError(response.error)
       } else {
-        // Handle successful response
         console.log(response)
       }
     } catch (err) {
@@ -56,6 +56,7 @@ const Page = () => {
   return (
     <div>
       <h1>Chat</h1>
+      <ChatPanel connectionId={id} />
       <form onSubmit={handleSubmit} className="fixed bottom-0 left-0 right-0 p-4 bg-white">
         <div className="flex gap-2 max-w-4xl mx-auto">
           <input
