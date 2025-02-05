@@ -4,9 +4,11 @@ import { relations } from 'drizzle-orm';
 export const chats = pgTable('chats', {
   id: serial('id').primaryKey(),
   userId: text('user_id').references(() => users.clerk_id),
+  connectionId: integer('connection_id').references(() => dbConnections.id),
   message: text('message'),
   response: text('response'), 
-  createdAt: integer('created_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 export const users = pgTable('users', {
