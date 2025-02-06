@@ -3,21 +3,22 @@
 import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
-import { Copy } from 'lucide-react'
+import { Copy, Database, ChevronLeft } from 'lucide-react'
 
 const SchemaViewer = ({ data }) => {
   const [selectedTable, setSelectedTable] = useState(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
 
-  const handleCopyUrl = () => {
+  const handleCopyUrl = async () => {
     if (data?.[0]?.postgresUrl) {
-      navigator.clipboard.writeText(data[0].postgresUrl)
-        .then(() => {
-          console.log('URL copied to clipboard')
-        })
-        .catch(err => {
-          console.error('Failed to copy URL:', err)
-        })
+      try {
+        await navigator.clipboard.writeText(data[0].postgresUrl)
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 2000)
+      } catch (err) {
+        console.error('Failed to copy URL:', err)
+      }
     }
   }
 
@@ -28,28 +29,29 @@ const SchemaViewer = ({ data }) => {
   const renderContent = () => {
     if (selectedTable) {
       return (
-        <div className="mt-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">{selectedTable.tableName}</h3>
+        <div className="mt-4 animate-fadeIn">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-900">{selectedTable.tableName}</h3>
             <button 
               onClick={() => setSelectedTable(null)}
-              className="text-sm text-blue-500 hover:text-blue-600"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
             >
+              <ChevronLeft className="w-4 h-4" />
               Back to Tables
             </button>
           </div>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Column Name</TableHead>
-                <TableHead>Data Type</TableHead>
+              <TableRow className="bg-gray-50 hover:bg-gray-50">
+                <TableHead className="font-semibold">Column Name</TableHead>
+                <TableHead className="font-semibold">Data Type</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {selectedTable.columns.map((column, index) => (
-                <TableRow key={index}>
-                  <TableCell>{column.column_name}</TableCell>
-                  <TableCell>{column.data_type}</TableCell>
+                <TableRow key={index} className="hover:bg-red-50">
+                  <TableCell className="font-medium">{column.column_name}</TableCell>
+                  <TableCell className="text-gray-600">{column.data_type}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -64,9 +66,9 @@ const SchemaViewer = ({ data }) => {
           <button
             key={table.tableName}
             onClick={() => handleTableClick(table)}
-            className="p-4 text-left border rounded-lg hover:bg-gray-50 transition-colors"
+            className="p-4 text-left border border-gray-100 rounded-lg hover:bg-red-50 hover:border-red-200 transition-all duration-200 group"
           >
-            <p className="font-medium">{table.tableName}</p>
+            <p className="font-medium text-gray-900 group-hover:text-red-600">{table.tableName}</p>
             <p className="text-sm text-gray-500 mt-1">
               {table.columns.length} columns
             </p>
@@ -77,10 +79,14 @@ const SchemaViewer = ({ data }) => {
   }
 
   return (
-    <div className="flex items-center gap-2 absolute top-4 right-4">
+    <div className="flex items-center gap-3">
       <button
         onClick={handleCopyUrl}
-        className="p-2 hover:bg-gray-100 rounded-md"
+        className={`p-2 rounded-md transition-all duration-200 ${
+          copySuccess 
+            ? 'bg-green-50 text-green-600' 
+            : 'hover:bg-red-50 text-gray-600 hover:text-red-500'
+        }`}
         title="Copy Database URL"
       >
         <Copy className="w-5 h-5" />
@@ -88,13 +94,14 @@ const SchemaViewer = ({ data }) => {
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+          <button className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-2">
+            <Database className="w-4 h-4" />
             Schema
           </button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-2xl font-bold">
               {selectedTable ? `Table: ${selectedTable.tableName}` : 'Database Schema'}
             </DialogTitle>
           </DialogHeader>

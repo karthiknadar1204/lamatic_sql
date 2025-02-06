@@ -27,31 +27,33 @@ const Message = ({ message, onSubmit, isLoading }) => {
         : parsedResponse.type
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto">
-      <div className="flex justify-end items-start gap-2">
-        <div className="bg-blue-100 rounded-lg p-4 max-w-[80%]">
-          <p className="text-sm">{message.message}</p>
+    <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto animate-fadeIn">
+      <div className="flex justify-end items-start gap-3">
+        <div className="bg-red-500 text-white rounded-2xl rounded-tr-sm p-4 max-w-[80%] shadow-sm">
+          <p className="text-sm leading-relaxed">{message.message}</p>
         </div>
         <UserButton />
       </div>
 
-      <div className="flex justify-start items-start gap-2">
-        <div className="bg-gray-100 p-2 rounded-full">
-          <Bot className="w-6 h-6" />
+      <div className="flex justify-start items-start gap-3">
+        <div className="bg-black text-white p-2 rounded-full shadow-sm">
+          <Bot className="w-5 h-5" />
         </div>
-        {messageType === 'loading' ? (
-          <LoadingMessage />
-        ) : messageType === 'question' ? (
-          <QuestionMessage response={parsedResponse} onSubmit={onSubmit} />
-        ) : messageType === 'visualization' ? (
-          <VisualizationMessage response={parsedResponse} />
-        ) : messageType === 'analysis' ? (
-          <AnalysisMessage response={parsedResponse} />
-        ) : (
-          <div className="bg-gray-100 rounded-lg p-4 max-w-[80%]">
-            <p className="text-sm">Unsupported message type</p>
-          </div>
-        )}
+        <div className="flex-1">
+          {messageType === 'loading' ? (
+            <LoadingMessage />
+          ) : messageType === 'question' ? (
+            <QuestionMessage response={parsedResponse} onSubmit={onSubmit} />
+          ) : messageType === 'visualization' ? (
+            <VisualizationMessage response={parsedResponse} />
+          ) : messageType === 'analysis' ? (
+            <AnalysisMessage response={parsedResponse} />
+          ) : (
+            <div className="bg-white rounded-2xl rounded-tl-sm p-4 max-w-[80%] shadow-sm border border-gray-100">
+              <p className="text-sm text-gray-800">Unsupported message type</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

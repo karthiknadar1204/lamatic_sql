@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { getChatHistory } from '../actions/chat'
 import { submitChat } from '../actions/chatAction'
 import Message from './messages/Message'
+import { Loader2 } from 'lucide-react'
 
 const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
   const [messages, setMessages] = useState([])
@@ -74,17 +75,33 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
     handleSubmit
   }))
 
-  if (loading) return <div>Loading messages...</div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] bg-white/50 rounded-lg border border-gray-100">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-8 h-8 animate-spin text-red-500" />
+          <p className="text-gray-500">Loading conversation...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6 pb-24">
-      {messages.map((msg, index) => (
-        <Message 
-          key={`${msg.id}-${index}`} 
-          message={msg} 
-          isLoading={msg.temporary}
-        />
-      ))}
+      {messages.length === 0 ? (
+        <div className="text-center py-12 bg-white/50 rounded-lg border border-gray-100">
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Start a Conversation</h3>
+          <p className="text-gray-500">Ask questions about your database using natural language</p>
+        </div>
+      ) : (
+        messages.map((msg, index) => (
+          <Message 
+            key={`${msg.id}-${index}`} 
+            message={msg} 
+            isLoading={msg.temporary}
+          />
+        ))
+      )}
     </div>
   )
 })
