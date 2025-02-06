@@ -1,8 +1,10 @@
-'use client'
+"use client"
 
-import React, { useEffect, useState } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from "react"
+import { useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
+import { Database, ArrowRight } from "lucide-react"
+import { motion } from "framer-motion"
 
 const Connections = ({ refreshTrigger = 0 }) => {
   const router = useRouter()
@@ -14,9 +16,9 @@ const Connections = ({ refreshTrigger = 0 }) => {
   useEffect(() => {
     const fetchConnections = async () => {
       try {
-        const response = await fetch('/api/connections')
+        const response = await fetch("/api/connections")
         if (!response.ok) {
-          throw new Error('Failed to fetch connections')
+          throw new Error("Failed to fetch connections")
         }
         const data = await response.json()
         setConnections(data)
@@ -33,33 +35,65 @@ const Connections = ({ refreshTrigger = 0 }) => {
   }, [user, refreshTrigger])
 
   if (loading) {
-    return <div>Loading connections...</div>
+    return (
+      <div className="flex items-center justify-center h-72">
+        <div className="text-xl text-red-500 animate-pulse">Loading connections...</div>
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="text-red-500">Error: {error}</div>
+    return (
+      <div className="flex items-center justify-center h-72">
+        <div className="text-xl text-red-500">Error: {error}</div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">Your Connections</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {connections.length === 0 ? (
-        <p>No connections found</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {connections.map((connection) => (
-            <div 
-              key={connection.id}
-              className="p-4 border rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => router.push(`/chats/${connection.id}`)}
-            >
-              <h3 className="font-semibold">{connection.connectionName}</h3>
-            </div>
-          ))}
+        <div className="col-span-full flex items-center justify-center h-72">
+          <p className="text-xl text-gray-500">No connections found</p>
         </div>
+      ) : (
+        connections.map((connection, index) => (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+            key={connection.id}
+            className="w-72 h-72 group relative overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300"
+            onClick={() => router.push(`/chats/${connection.id}`)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                router.push(`/chats/${connection.id}`)
+              }
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            <div className="h-full flex flex-col">
+              <div className="p-6 border-b border-red-100">
+                <Database className="w-8 h-8 text-red-400 mb-3" />
+                <h3 className="text-2xl font-bold text-gray-900 group-hover:text-red-600 transition-colors">
+                  {connection.connectionName}
+                </h3>
+              </div>
+
+              <div className="flex-1 p-6 flex flex-col items-center justify-center group-hover:bg-red-50/50 transition-colors">
+                <p className="text-gray-600 text-center mb-4">Click to open connection</p>
+                <ArrowRight className="w-6 h-6 text-red-400 transform group-hover:translate-x-2 transition-transform" />
+              </div>
+            </div>
+          </motion.div>
+        ))
       )}
     </div>
   )
 }
 
 export default Connections
+

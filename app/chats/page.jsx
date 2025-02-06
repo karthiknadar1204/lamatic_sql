@@ -1,39 +1,42 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
-import { Plus, ArrowRight, Loader2, ArrowLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import Connections from '../_components/connections'
-import { embeddings } from '../actions/chat'
+import { useState } from "react"
+import { Plus, ArrowRight, Loader2, ArrowLeft } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import Connections from "../_components/connections"
+import { embeddings } from "../actions/chat"
 
 const Page = () => {
   const router = useRouter()
   const [showModal, setShowModal] = useState(false)
-  const [url, setUrl] = useState('')
-  const [name, setName] = useState('')
-  const [error, setError] = useState('')
+  const [url, setUrl] = useState("")
+  const [name, setName] = useState("")
+  const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const validateInputs = () => {
     const postgresUrlRegex = /^postgres(ql)?:\/\/[^\s]+$/
-    
+
     if (!url) {
-      setError('Please enter a PostgreSQL URL')
+      setError("Please enter a PostgreSQL URL")
       return false
     }
 
     if (!name) {
-      setError('Please enter a connection name')
+      setError("Please enter a connection name")
       return false
     }
 
     if (!postgresUrlRegex.test(url)) {
-      setError('Please enter a valid PostgreSQL URL (starts with postgres:// or postgresql://)')
+      setError("Please enter a valid PostgreSQL URL (starts with postgres:// or postgresql://)")
       return false
     }
 
-    setError('')
+    setError("")
     return true
   }
 
@@ -42,30 +45,28 @@ const Page = () => {
 
     setIsLoading(true)
     try {
-      const response = await fetch('/api/connectDb', {
-        method: 'POST',
+      const response = await fetch("/api/connectDb", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           postgresUrl: url,
-          connectionName: name
+          connectionName: name,
         }),
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.message || 'Failed to connect to database')
+        throw new Error(data.message || "Failed to connect to database")
       }
 
       const data = await response.json()
-      console.log('Connection successful:', data)
       await embeddings(data)
       setShowModal(false)
-      setUrl('')
-      setName('')
-      setRefreshKey(prev => prev + 1)
-
+      setUrl("")
+      setName("")
+      setRefreshKey((prev) => prev + 1)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -74,95 +75,88 @@ const Page = () => {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <button
-        onClick={() => router.push('/')}
-        className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Main Page
-      </button>
-
-      <div className="flex gap-8">
-        <div 
-          className="w-64 h-64 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={() => setShowModal(true)}
+    <div className="min-h-screen bg-gradient-to-b from-white to-red-50">
+      <div className="max-w-7xl mx-auto p-8">
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/")}
+          className="mb-8 group text-gray-600 hover:text-red-600 hover:bg-red-50"
         >
-          <Plus className="w-12 h-12 text-gray-400" />
+          <ArrowLeft className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-1" />
+          Back to Main Page
+        </Button>
+
+        <div className="flex flex-wrap gap-8">
+          <div
+            className="w-72 h-72 shrink-0 border-2 border-dashed border-red-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-red-50 hover:border-red-300 transition-all duration-300 group"
+            onClick={() => setShowModal(true)}
+          >
+            <Plus className="w-12 h-12 text-red-300 group-hover:text-red-400 group-hover:scale-110 transition-all duration-300" />
+            <p className="mt-4 text-red-400 font-medium">Add New Connection</p>
+          </div>
+
+          <div className="flex-1 min-w-[300px]">
+            <Connections refreshTrigger={refreshKey} />
+          </div>
         </div>
 
-        <Connections refreshTrigger={refreshKey} />
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h2 className="text-xl font-bold mb-4">Add New Collection</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  PostgreSQL URL
-                </label>
-                <input
-                  type="text"
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-gray-900">Add New Connection</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">PostgreSQL URL</label>
+                <Input
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="border-red-100 focus:border-red-300 focus:ring-red-200"
                   placeholder="Enter PostgreSQL URL"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Collection Name
-                </label>
-                <input
-                  type="text"
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Collection Name</label>
+                <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="border-red-100 focus:border-red-300 focus:ring-red-200"
                   placeholder="Enter collection name"
                 />
               </div>
 
-              {error && (
-                <p className="text-red-500 text-sm">{error}</p>
-              )}
-            </div>
+              {error && <p className="text-red-500 text-sm animate-fadeIn">{error}</p>}
 
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 border border-gray-300 rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isLoading}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md flex items-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="w-4 h-4" />
-                    Connect
-                  </>
-                )}
-              </button>
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowModal(false)}
+                  className="border-red-200 hover:bg-red-50 hover:text-red-600"
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSubmit} disabled={isLoading} className="bg-red-500 hover:bg-red-600 text-white">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      Connect
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 }
 
 export default Page
+
