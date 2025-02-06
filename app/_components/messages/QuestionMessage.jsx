@@ -16,8 +16,9 @@ export const QuestionMessage = ({ response, onSubmit }) => {
     const inputToSubmit = customInput.trim() || selectedOption
     if (inputToSubmit) {
       onSubmit(inputToSubmit)
-      setCustomInput('')
-      setSelectedOption('')
+      if (customInput !== selectedOption) {
+        setCustomInput('')
+      }
     }
   }
 
@@ -53,7 +54,7 @@ export const QuestionMessage = ({ response, onSubmit }) => {
               value={customInput}
               onChange={(e) => {
                 setCustomInput(e.target.value)
-                setSelectedOption('') 
+                setSelectedOption('')
               }}
               placeholder={response.allowCustomInput ? "Or enter your own..." : selectedOption}
               className="flex-1 px-3 py-2 border rounded-md text-sm"

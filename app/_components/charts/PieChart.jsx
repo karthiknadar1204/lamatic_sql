@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const PieChart = ({ data, width = 400, height = 400 }) => {
+const PieChart = ({ data, width = 600, height = 400 }) => {
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -18,6 +18,15 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
     const radius = Math.min(width, height) / 2;
     const g = svg.append('g')
       .attr('transform', `translate(${width/2},${height/2})`);
+
+    const keys = Object.keys(data[0]);
+    const labelKey = keys[0];
+    const valueKey = keys[1];
+
+    const formattedData = data.map(d => ({
+      label: d[labelKey],
+      value: Number(d[valueKey]) || 0
+    }));
 
     const color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -34,7 +43,7 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
       .innerRadius(radius - 40);
 
     const arcs = g.selectAll('.arc')
-      .data(pie(data))
+      .data(pie(formattedData))
       .enter()
       .append('g')
       .attr('class', 'arc');
@@ -48,6 +57,11 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
 
         const tooltip = d3.select('body').append('div')
           .attr('class', 'tooltip')
+          .style('position', 'absolute')
+          .style('background-color', 'white')
+          .style('padding', '8px')
+          .style('border-radius', '4px')
+          .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
           .style('opacity', 0);
 
         tooltip.transition()
@@ -57,7 +71,7 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
         const percentage = ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1);
         tooltip.html(`
           <strong>${d.data.label}</strong><br/>
-          Value: ${d.data.value}<br/>
+          ${valueKey}: ${d.data.value}<br/>
           Percentage: ${percentage}%
         `)
           .style('left', (event.pageX + 10) + 'px')
@@ -83,21 +97,24 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
       .attr('font-size', 10)
       .attr('text-anchor', 'start')
       .selectAll('g')
-      .data(data)
+      .data(formattedData)
       .enter().append('g')
-      .attr('transform', (d, i) => `translate(${width - 100},${i * 20 + 20})`);
+      .attr('transform', (d, i) => `translate(${width - 120},${i * 20 + 20})`);
 
     legend.append('rect')
       .attr('x', 0)
       .attr('width', 15)
       .attr('height', 15)
-      .attr('fill', (d, i) => color(d.label));
+      .attr('fill', (d) => color(d.label));
 
     legend.append('text')
       .attr('x', 20)
       .attr('y', 9.5)
       .attr('dy', '0.32em')
-      .text(d => `${d.label}: ${d.value}`);
+      .text(d => {
+        const value = d.value.toLocaleString();
+        return `${d.label}: ${value}`;
+      });
 
   }, [data, width, height]);
 

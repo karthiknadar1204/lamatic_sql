@@ -7,13 +7,15 @@ import ScatterPlot from '../charts/ScatterPlot';
 
 export const VisualizationMessage = ({ response }) => {
   const content = response.data?.data?.content || response.data?.content || response.content;
-  const visualization = response.data?.data?.visualization || response.data?.visualization || response.visualization;
+  const visualizations = response.data?.data?.visualization || response.data?.visualization || response.visualization;
 
-  if (!content || !visualization) {
+  if (!content || !visualizations) {
     return null;
   }
 
-  const renderChart = () => {
+  const renderChart = (visualization) => {
+    if (!visualization?.chartType) return null;
+
     switch (visualization.chartType.toLowerCase()) {
       case 'bar':
         return <BarChart data={visualization.data} />;
@@ -38,9 +40,15 @@ export const VisualizationMessage = ({ response }) => {
           ))}
         </ul>
       </div>
-      {visualization && (
+      {Array.isArray(visualizations) ? (
+        visualizations.map((viz, index) => (
+          <div key={index} className="mt-4 bg-white p-4 rounded-lg shadow-sm">
+            {renderChart(viz)}
+          </div>
+        ))
+      ) : (
         <div className="mt-4 bg-white p-4 rounded-lg shadow-sm">
-          {renderChart()}
+          {renderChart(visualizations)}
         </div>
       )}
     </div>

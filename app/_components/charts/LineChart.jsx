@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const LineChart = ({ data, width = 600, height = 400, margin = { top: 20, right: 30, bottom: 30, left: 40 } }) => {
+const LineChart = ({ data, width = 600, height = 400, margin = { top: 20, right: 30, bottom: 60, left: 60 } }) => {
   const svgRef = useRef(null);
 
   useEffect(() => {
@@ -16,215 +16,116 @@ const LineChart = ({ data, width = 600, height = 400, margin = { top: 20, right:
       .attr('width', width)
       .attr('height', height);
 
-    // Calculate inner dimensions
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
-    // Process data to flatten it for scales
-    const allPoints = data.flatMap(series => series.data);
+    // Get dynamic keys
+    const keys = Object.keys(data[0]);
+    const xKey = keys[0];
+    const yKey = keys[1];
 
-    // Parse dates and handle different formats
-    const parseDate = (dateStr) => {
-      if (!dateStr) return null;
-      // Handle month names
-      if (['January', 'February', 'March', 'April', 'May', 'June', 'July', 
-           'August', 'September', 'October', 'November', 'December'].includes(dateStr)) {
-        return new Date(2024, ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
-                              'August', 'September', 'October', 'November', 'December'].indexOf(dateStr));
-      }
-      // Try parsing as ISO date
-      const date = new Date(dateStr);
-      return isNaN(date.getTime()) ? null : date;
-    };
+    // Format data
+    const formattedData = data.map(d => ({
+      x: d[xKey],
+      y: Number(d[yKey]) || 0,
+      label: d[xKey],
+      value: Number(d[yKey]) || 0
+    }));
 
     // Create scales
-    const xScale = d3.scaleTime()
-      .domain(d3.extent(allPoints, d => parseDate(d.x)))
-      .range([0, innerWidth]);
+    const xScale = d3.scalePoint()
+      .domain(formattedData.map(d => d.x))
+      .range([0, innerWidth])
+      .padding(0.5);
 
     const yScale = d3.scaleLinear()
-      .domain([0, d3.max(allPoints, d => d.y)])
+      .domain([0, d3.max(formattedData, d => d.y) * 1.1])
       .range([innerHeight, 0]);
+
+    // Create line generator
+    const line = d3.line()
+      .x(d => xScale(d.x))
+      .y(d => yScale(d.y))
+      .curve(d3.curveMonotoneX);
 
     // Create container group
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Add axes
-    g.append('g')
-      .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale))
-      .attr('class', 'x-axis');
+    // Add the line path
+    g.append('path')
+      .datum(formattedData)
+      .attr('fill', 'none')
+      .attr('stroke', 'var(--chart-1, #ef4444)')
+      .attr('stroke-width', 2)
+      .attr('d', line);
 
-    g.append('g')
-      .call(d3.axisLeft(yScale))
-      .attr('class', 'y-axis');
-
-    // Create line generator
-    const line = d3.line()
-      .x(d => xScale(parseDate(d.x)))
-      .y(d => yScale(d.y))
-      .defined(d => parseDate(d.x) !== null && !isNaN(d.y))
-      .curve(d3.curveMonotoneX);
-
-    // Add lines and points for each series
-    data.forEach((series, i) => {
-      const validData = series.data.filter(d => parseDate(d.x) !== null && !isNaN(d.y));
-      
-      // Add the line path if there are multiple points
-      if (validData.length > 1) {
-        g.append('path')
-          .datum(validData)
-          .attr('fill', 'none')
-          .attr('stroke', series.borderColor || `var(--chart-${i + 1})`)
-          .attr('stroke-width', 2)
-          .attr('d', line);
-      }
-
-      // Always add dots for data points
-      g.selectAll(`.dot-series-${i}`)
-        .data(validData)
-        .enter()
-        .append('circle')
-        .attr('class', `dot dot-series-${i}`)
-        .attr('cx', d => xScale(parseDate(d.x)))
-        .attr('cy', d => yScale(d.y))
-        .attr('r', 6) // Made dots slightly larger for better visibility
-        .attr('fill', series.borderColor || `var(--chart-${i + 1})`)
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.5);
-    });
-
-    // Add legend
-    const legend = svg.append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${width - margin.right - 100}, ${margin.top})`);
-
-    data.forEach((series, i) => {
-      const legendItem = legend.append('g')
-        .attr('transform', `translate(0, ${i * 20})`);
-
-      legendItem.append('rect')
-        .attr('width', 10)
-        .attr('height', 10)
-        .attr('fill', series.borderColor || `var(--chart-${i + 1})`);
-
-      legendItem.append('text')
-        .attr('x', 15)
-        .attr('y', 9)
-        .text(series.label)
-        .style('font-size', '12px');
-    });
-
-    // Add tooltip first
-    const tooltip = d3.select('body').append('div')
-      .attr('class', 'tooltip')
-      .style('opacity', 0);
-
-    // Add hover effects for dots
+    // Add dots
     g.selectAll('.dot')
+      .data(formattedData)
+      .enter()
+      .append('circle')
+      .attr('class', 'dot')
+      .attr('cx', d => xScale(d.x))
+      .attr('cy', d => yScale(d.y))
+      .attr('r', 5)
+      .attr('fill', 'var(--chart-1, #ef4444)')
+      .attr('opacity', 0.7)
       .on('mouseover', function(event, d) {
-        const date = parseDate(d.x);
-        const formattedDate = date ? date.toLocaleDateString() : d.x;
+        d3.select(this).attr('opacity', 1);
         
-        d3.select(this)
-          .attr('r', 6)
-          .attr('opacity', 1);
+        const tooltip = d3.select('body').append('div')
+          .attr('class', 'tooltip')
+          .style('position', 'absolute')
+          .style('background-color', 'white')
+          .style('padding', '8px')
+          .style('border-radius', '4px')
+          .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
+          .style('opacity', 0);
 
         tooltip.transition()
           .duration(200)
           .style('opacity', .9);
         
         tooltip.html(`
-          <strong>${formattedDate}</strong><br/>
-          Value: ${d.y}
+          <strong>${d.label}</strong><br/>
+          ${xKey}: ${d.x}<br/>
+          ${yKey}: ${d.y}
         `)
           .style('left', (event.pageX + 10) + 'px')
           .style('top', (event.pageY - 28) + 'px');
       })
       .on('mouseout', function() {
-        d3.select(this)
-          .attr('r', 4)
-          .attr('opacity', 0.7);
-        
-        tooltip.transition()
-          .duration(500)
-          .style('opacity', 0);
+        d3.select(this).attr('opacity', 0.7);
+        d3.selectAll('.tooltip').remove();
       });
 
-    // Add hover effects for lines
-    const mouseG = g.append('g')
-      .attr('class', 'mouse-over-effects');
+    // Add axes
+    g.append('g')
+      .attr('transform', `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(xScale))
+      .selectAll('text')
+      .attr('transform', 'rotate(-45)')
+      .style('text-anchor', 'end')
+      .attr('dx', '-0.8em')
+      .attr('dy', '0.15em');
 
-    mouseG.append('path')
-      .attr('class', 'mouse-line')
-      .style('stroke', 'var(--muted-foreground)')
-      .style('stroke-width', '1px')
-      .style('opacity', '0');
+    g.append('g')
+      .call(d3.axisLeft(yScale));
 
-    const mousePerLine = mouseG.selectAll('.mouse-per-line')
-      .data(data)
-      .enter()
-      .append('g')
-      .attr('class', 'mouse-per-line');
+    // Add axis labels
+    g.append('text')
+      .attr('x', innerWidth / 2)
+      .attr('y', innerHeight + margin.bottom - 5)
+      .attr('text-anchor', 'middle')
+      .text(data.xAxis || xKey);
 
-    mousePerLine.append('circle')
-      .attr('r', 4)
-      .style('stroke', (d, i) => d.borderColor || `var(--chart-${i + 1})`)
-      .style('fill', 'none')
-      .style('stroke-width', '2px')
-      .style('opacity', '0');
-
-    mouseG.append('rect')
-      .attr('width', innerWidth)
-      .attr('height', innerHeight)
-      .attr('fill', 'none')
-      .attr('pointer-events', 'all')
-      .on('mouseout', () => {
-        d3.select('.mouse-line').style('opacity', '0');
-        d3.selectAll('.mouse-per-line circle').style('opacity', '0');
-        tooltip.transition().duration(500).style('opacity', 0);
-      })
-      .on('mouseover', () => {
-        d3.select('.mouse-line').style('opacity', '1');
-        d3.selectAll('.mouse-per-line circle').style('opacity', '1');
-      })
-      .on('mousemove', function(event) {
-        const mouse = d3.pointer(event);
-        d3.select('.mouse-line')
-          .attr('d', `M${mouse[0]},${innerHeight} ${mouse[0]},0`);
-
-        const x0 = xScale.invert(mouse[0]);
-        const bisect = d3.bisector(d => parseDate(d.x)).left;
-
-        const lines = d3.selectAll('.mouse-per-line');
-        lines.attr('transform', function(d, i) {
-          const xDate = x0;
-          const idx = bisect(d.data, xDate);
-          const d0 = d.data[idx - 1];
-          const d1 = d.data[idx];
-          
-          if (!d0 || !d1) return '';
-          
-          const point = xDate - parseDate(d0.x) > parseDate(d1.x) - xDate ? d1 : d0;
-          const x = xScale(parseDate(point.x));
-          const y = yScale(point.y);
-          
-          tooltip.transition()
-            .duration(200)
-            .style('opacity', .9);
-          
-          tooltip.html(`
-            <strong>${d.label}</strong><br/>
-            Date: ${new Date(point.x).toLocaleDateString()}<br/>
-            Value: ${point.y}
-          `)
-            .style('left', (event.pageX + 10) + 'px')
-            .style('top', (event.pageY - 28) + 'px');
-
-          return `translate(${x},${y})`;
-        });
-      });
+    g.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', -margin.left + 15)
+      .attr('x', -innerHeight / 2)
+      .attr('text-anchor', 'middle')
+      .text(data.yAxis || yKey);
 
   }, [data, width, height, margin]);
 

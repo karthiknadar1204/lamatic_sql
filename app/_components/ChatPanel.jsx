@@ -41,6 +41,7 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
       const tempMessage = {
         id: Date.now(),
         message: submitData.get('input'),
+        connectionId: connectionId,
         temporary: true
       }
 
