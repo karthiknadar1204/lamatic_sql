@@ -8,7 +8,7 @@ import { Mail, Phone, MapPin } from "lucide-react"
 export default function Contact() {
   return (
     <section className="w-full py-24 bg-[#111]">
-      <div className="container px-4 md:px-6 mr-8">
+      <div className="container mx-auto px-4 md:px-6 ml-32">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-2">Get In Touch</h2>
           <p className="text-gray-400">Have questions? We're here to help</p>

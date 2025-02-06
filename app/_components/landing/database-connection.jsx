@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 export default function DatabaseConnection() {
   return (
     <section className="w-full py-24 bg-[#111]">
-      <div className="container mx-auto px-4 md:px-6 mr-8">
+      <div className="container mx-auto px-4 md:px-6 ml-32">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-2">Connect Your Database</h2>
           <p className="text-gray-400 text-lg">Simple and secure connection to your PostgreSQL database</p>

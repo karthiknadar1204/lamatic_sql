@@ -14,7 +14,7 @@ export default function Hero() {
           <Button size="lg" className="bg-red-500 hover:bg-red-600 text-white px-8">
             Get Started
           </Button>
-          <Button size="lg" variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
+          <Button size="lg" variant="outline" className="bg-black border-white text-white hover:bg-white hover:text-black">
             Learn More
           </Button>
         </div>
@@ -22,4 +22,3 @@ export default function Hero() {
     </section>
   )
 }
-
