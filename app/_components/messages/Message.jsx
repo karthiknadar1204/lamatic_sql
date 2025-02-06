@@ -6,6 +6,7 @@ import { QuestionMessage } from './QuestionMessage'
 import { VisualizationMessage } from './VisualizationMessage'
 import { UserButton } from '@clerk/nextjs'
 import { Bot } from 'lucide-react'
+import { ClarificationMessage } from './ClarificationMessage'
 
 const Message = ({ message, onSubmit, isLoading }) => {
   let parsedResponse
@@ -20,11 +21,13 @@ const Message = ({ message, onSubmit, isLoading }) => {
 
   const messageType = isLoading 
     ? 'loading'
-    : parsedResponse.question 
-      ? 'question' 
-      : parsedResponse.type === 'visualization'
-        ? 'visualization'
-        : parsedResponse.type
+    : parsedResponse.data?.type === 'clarification'
+      ? 'clarification'
+      : parsedResponse.question 
+        ? 'question' 
+        : parsedResponse.type === 'visualization'
+          ? 'visualization'
+          : parsedResponse.type
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto animate-fadeIn">
@@ -44,6 +47,8 @@ const Message = ({ message, onSubmit, isLoading }) => {
             <LoadingMessage />
           ) : messageType === 'question' ? (
             <QuestionMessage response={parsedResponse} onSubmit={onSubmit} />
+          ) : messageType === 'clarification' ? (
+            <ClarificationMessage response={parsedResponse} onSubmit={onSubmit} />
           ) : messageType === 'visualization' ? (
             <VisualizationMessage response={parsedResponse} />
           ) : messageType === 'analysis' ? (

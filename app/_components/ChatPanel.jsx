@@ -26,45 +26,41 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
     fetchMessages()
   }, [connectionId])
 
-  const handleSubmit = async (input) => {
+  const handleSubmit = async (formData) => {
     setIsSubmitting(true)
     
 
-    const optimisticMessage = {
-      id: Date.now(),
-      message: input,
-      response: JSON.stringify({
-        type: 'loading',
-        content: {
-          summary: 'Thinking...',
-          details: ['Processing your request...'],
-        }
-      }),
-      temporary: true
-    }
-    
-    setMessages(prev => [...prev, optimisticMessage])
+    const submitData = formData instanceof FormData ? formData : (() => {
+      const fd = new FormData()
+      fd.append('input', formData)
+      fd.append('connectionId', connectionId)
+      return fd
+    })()
 
-    const formData = new FormData()
-    formData.append('input', input)
-    formData.append('connectionId', connectionId)
-    
     try {
-      const response = await submitChat(formData)
-      if (!response.error) {
-
-        setMessages(prev => {
-          const filtered = prev.filter(msg => !msg.temporary)
-          return [...filtered, {
-            id: response.id,
-            message: input,
-            response: JSON.stringify(response.response)
-          }]
-        })
+      const tempMessage = {
+        id: Date.now(),
+        message: submitData.get('input'),
+        temporary: true
       }
+
+      setMessages(prev => [...prev, tempMessage])
+
+      const response = await submitChat(submitData)
+
+      if (response.error) {
+        throw new Error(response.error)
+      }
+
+      setMessages(prev => {
+        return [...prev.filter(msg => !msg.temporary), {
+          id: response.id,
+          message: submitData.get('input'),
+          response: response.response
+        }]
+      })
     } catch (error) {
       console.error('Error submitting chat:', error)
-
       setMessages(prev => prev.filter(msg => !msg.temporary))
     } finally {
       setIsSubmitting(false)
@@ -87,21 +83,15 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-24">
-      {messages.length === 0 ? (
-        <div className="text-center py-12 bg-white/50 rounded-lg border border-gray-100">
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Start a Conversation</h3>
-          <p className="text-gray-500">Ask questions about your database using natural language</p>
-        </div>
-      ) : (
-        messages.map((msg, index) => (
-          <Message 
-            key={`${msg.id}-${index}`} 
-            message={msg} 
-            isLoading={msg.temporary}
-          />
-        ))
-      )}
+    <div className="flex-1 overflow-y-auto">
+      {messages.map((message) => (
+        <Message 
+          key={message.id} 
+          message={message} 
+          onSubmit={handleSubmit}
+          isLoading={message.temporary} 
+        />
+      ))}
     </div>
   )
 })

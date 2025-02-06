@@ -81,3 +81,41 @@
   }
 }
 
+/* Add these styles after your existing CSS */
+.x-axis line,
+.y-axis line,
+.x-axis path,
+.y-axis path {
+  stroke: var(--border);
+}
+
+.x-axis text,
+.y-axis text {
+  fill: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.dot {
+  transition: all 0.2s ease;
+}
+
+.dot:hover {
+  cursor: pointer;
+}
+
+.tooltip {
+  position: absolute;
+  background-color: white;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  pointer-events: none;
+  font-size: 12px;
+  z-index: 100;
+}
+
+.axis-label {
+  fill: var(--muted-foreground);
+  font-size: 12px;
+}
+

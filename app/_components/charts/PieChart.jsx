@@ -9,7 +9,6 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
   useEffect(() => {
     if (!data || !data.length) return;
 
-
     d3.select(svgRef.current).selectAll('*').remove();
 
     const svg = d3.select(svgRef.current)
@@ -40,11 +39,36 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
       .append('g')
       .attr('class', 'arc');
 
-
     arcs.append('path')
       .attr('d', path)
-      .attr('fill', d => color(d.data.label));
+      .attr('fill', d => color(d.data.label))
+      .on('mouseover', function(event, d) {
+        d3.select(this)
+          .attr('opacity', 0.7);
 
+        const tooltip = d3.select('body').append('div')
+          .attr('class', 'tooltip')
+          .style('opacity', 0);
+
+        tooltip.transition()
+          .duration(200)
+          .style('opacity', .9);
+        
+        const percentage = ((d.endAngle - d.startAngle) / (2 * Math.PI) * 100).toFixed(1);
+        tooltip.html(`
+          <strong>${d.data.label}</strong><br/>
+          Value: ${d.data.value}<br/>
+          Percentage: ${percentage}%
+        `)
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 28) + 'px');
+      })
+      .on('mouseout', function() {
+        d3.select(this)
+          .attr('opacity', 1);
+        
+        d3.selectAll('.tooltip').remove();
+      });
 
     arcs.append('text')
       .attr('transform', d => `translate(${label.centroid(d)})`)
@@ -53,7 +77,6 @@ const PieChart = ({ data, width = 400, height = 400 }) => {
       .attr('text-anchor', 'middle')
       .style('font-size', '12px')
       .style('fill', '#333');
-
 
     const legend = svg.append('g')
       .attr('font-family', 'sans-serif')

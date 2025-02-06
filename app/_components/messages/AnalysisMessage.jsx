@@ -1,5 +1,9 @@
 export const AnalysisMessage = ({ response }) => {
-  const content = response.data?.content || response.content
+  const content = response.data?.data?.content || response.data?.content || response.content;
+
+  if (!content) {
+    return null;
+  }
 
   return (
     <div className="bg-gray-100 rounded-lg p-4 max-w-[80%]">
@@ -27,5 +31,5 @@ export const AnalysisMessage = ({ response }) => {
         )}
       </div>
     </div>
-  )
-} 
+  );
+}; 
