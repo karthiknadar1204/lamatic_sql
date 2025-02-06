@@ -7,7 +7,7 @@ import { db } from "@/configs/db";
 import { eq, and } from "drizzle-orm";
 import { chats, dbConnections } from "@/configs/schema";
 
-const CHUNK_SIZE = 4000; // Safe size under the 8192 token limit
+const CHUNK_SIZE = 4000;
 
 function chunkData(data) {
   const chunks = [];
@@ -55,13 +55,13 @@ export async function embeddings(data) {
       sampleData: t.data
     })));
 
-    // Generate schema embedding
+
     const schemaEmbedding = await openai.embeddings.create({
       model: "text-embedding-ada-002",
       input: JSON.stringify(schemaText)
     });
 
-    // Generate embeddings for each data chunk
+
     const dataEmbeddings = await Promise.all(
       dataChunks.map(async (chunk, index) => {
         const embedding = await openai.embeddings.create({
@@ -81,8 +81,7 @@ export async function embeddings(data) {
         };
       })
     );
-
-    // Upsert all embeddings to Pinecone
+     
     await index.upsert([
       {
         id: `schema-${String(data.id)}`,

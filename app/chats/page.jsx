@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Plus, ArrowRight, Loader2 } from 'lucide-react'
+import { Plus, ArrowRight, Loader2, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Connections from '../_components/connections'
 import { embeddings } from '../actions/chat'
@@ -75,6 +75,14 @@ const Page = () => {
 
   return (
     <div className="min-h-screen p-8">
+      <button
+        onClick={() => router.push('/')}
+        className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Main Page
+      </button>
+
       <div className="flex gap-8">
         <div 
           className="w-64 h-64 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
