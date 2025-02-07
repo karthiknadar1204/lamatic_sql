@@ -124,7 +124,6 @@ export async function submitChat(formData) {
         data: researchResult 
       };
     }
-
     console.log('Generated response:', response);
 
     try {
@@ -136,6 +135,7 @@ export async function submitChat(formData) {
 
     return {
       id: Date.now(),
+      connectionId: parseInt(connectionId),
       response
     };
 

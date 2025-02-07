@@ -5,7 +5,7 @@ export default function Footer() {
   return (
     <footer className="w-full bg-[#111] text-gray-400">
       <div className="container max-w-7xl mx-auto px-8 md:px-12 py-12 md:py-24">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
           <div className="space-y-4">
             <h3 className="text-white text-2xl font-bold">DataChat</h3>
             <p className="text-sm">

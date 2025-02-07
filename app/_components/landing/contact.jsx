@@ -8,13 +8,13 @@ import { Mail, Phone, MapPin } from "lucide-react"
 export default function Contact() {
   return (
     <section className="w-full py-24 bg-[#111]">
-      <div className="container mx-auto px-4 md:px-6 ml-32">
+      <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-2">Get In Touch</h2>
           <p className="text-gray-400">Have questions? We're here to help</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           <div className="space-y-6">
             <div className="bg-gray-800 p-6 rounded-lg flex items-start space-x-4">
               <Mail className="h-6 w-6 text-red-500" />

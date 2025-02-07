@@ -28,7 +28,6 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
 
   const handleSubmit = async (formData) => {
     setIsSubmitting(true)
-    
 
     const submitData = formData instanceof FormData ? formData : (() => {
       const fd = new FormData()
@@ -38,14 +37,24 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
     })()
 
     try {
-      const tempMessage = {
+      const userMessage = submitData.get('input')
+      
+      // Immediately show user message
+      const tempUserMessage = {
         id: Date.now(),
-        message: submitData.get('input'),
-        connectionId: connectionId,
+        message: userMessage,
+        type: 'user',
         temporary: true
       }
 
-      setMessages(prev => [...prev, tempMessage])
+      // Add loading message
+      const tempLoadingMessage = {
+        id: Date.now() + 1,
+        type: 'loading',
+        temporary: true
+      }
+
+      setMessages(prev => [...prev, tempUserMessage, tempLoadingMessage])
 
       const response = await submitChat(submitData)
 
@@ -56,8 +65,9 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
       setMessages(prev => {
         return [...prev.filter(msg => !msg.temporary), {
           id: response.id,
-          message: submitData.get('input'),
-          response: response.response
+          message: userMessage,
+          response: response.response,
+          connectionId: response.connectionId
         }]
       })
     } catch (error) {
