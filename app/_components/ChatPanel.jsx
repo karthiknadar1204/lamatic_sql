@@ -39,7 +39,6 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
     try {
       const userMessage = submitData.get('input')
       
-      // Immediately show user message
       const tempUserMessage = {
         id: Date.now(),
         message: userMessage,
@@ -47,7 +46,6 @@ const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
         temporary: true
       }
 
-      // Add loading message
       const tempLoadingMessage = {
         id: Date.now() + 1,
         type: 'loading',
