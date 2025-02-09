@@ -5,11 +5,13 @@ import { getChatHistory } from '../actions/chat'
 import { submitChat } from '../actions/chatAction'
 import Message from './messages/Message'
 import { Loader2 } from 'lucide-react'
+import { useAIState } from '@/lib/ai-context'
 
 const ChatPanel = React.forwardRef(({ connectionId }, ref) => {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { state, dispatch } = useAIState()
 
   useEffect(() => {
     const fetchMessages = async () => {

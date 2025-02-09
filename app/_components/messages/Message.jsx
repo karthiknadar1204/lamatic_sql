@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { AnalysisMessage } from './AnalysisMessage'
 import { LoadingMessage } from './LoadingMessage'
 import { QuestionMessage } from './QuestionMessage'
@@ -8,7 +9,31 @@ import { UserButton } from '@clerk/nextjs'
 import { Bot } from 'lucide-react'
 import { ClarificationMessage } from './ClarificationMessage'
 
-const Message = ({ message, onSubmit, isLoading }) => {
+const Message = ({ message, onSubmit, isLoading, isStreaming }) => {
+  const [streamedContent, setStreamedContent] = useState(message.content)
+
+  useEffect(() => {
+    if (isStreaming && message.stream) {
+      const reader = message.stream.getReader()
+      let accumulated = ''
+
+      const processStream = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            accumulated += value
+            setStreamedContent(accumulated)
+          }
+        } catch (error) {
+          console.error('Error reading stream:', error)
+        }
+      }
+
+      processStream()
+    }
+  }, [isStreaming, message.stream])
+
   if (message.type === 'loading') {
     return <LoadingMessage />
   }
