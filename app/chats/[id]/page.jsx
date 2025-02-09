@@ -7,6 +7,7 @@ import { submitChat } from '@/app/actions/chatAction'
 import ChatPanel from '@/app/_components/ChatPanel'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import SchemaViewer from '@/app/_components/SchemaViewer'
+import { useRateLimit } from '@/hooks/use-rate-limit'
 
 const Page = () => {
   const { id } = useParams()
@@ -18,6 +19,7 @@ const Page = () => {
   const [error, setError] = useState(null)
   const [input, setInput] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { isRateLimited, cooldownTimer, checkRateLimit } = useRateLimit();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +38,10 @@ const Page = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!input.trim() || isSubmitting) return
+    if (!input.trim() || isSubmitting || isRateLimited) return
+
+    const canProceed = await checkRateLimit()
+    if (!canProceed) return
 
     setIsSubmitting(true)
     setInput('')
@@ -125,13 +130,18 @@ const Page = () => {
           />
           <button 
             type="submit"
-            disabled={isSubmitting || !input.trim()}
+            disabled={isSubmitting || !input.trim() || isRateLimited}
             className="px-4 md:px-5 py-2 md:py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm md:text-base whitespace-nowrap"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
                 <span className="hidden sm:inline">Sending...</span>
+              </>
+            ) : isRateLimited ? (
+              <>
+                <span className="hidden sm:inline">Wait {cooldownTimer}s</span>
+                <span className="sm:hidden">{cooldownTimer}s</span>
               </>
             ) : (
               <>

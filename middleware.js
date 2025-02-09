@@ -8,7 +8,8 @@ const isPublicRoute = createRouteMatcher([
 
 const isPrivateRoute = createRouteMatcher([
   '/chats',
-  '/chats/(.*)'
+  '/chats/(.*)',
+  '/api/ratelimit'
 ])
 
 export default clerkMiddleware(async (auth, request) => {
