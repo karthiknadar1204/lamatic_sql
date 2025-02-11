@@ -148,6 +148,10 @@ export async function getQueryEmbeddings(message, connectionId) {
 }
 
 export async function getChatHistory(connectionId) {
-  const chatHistory = await db.select().from(chats).where(eq(chats.connectionId, connectionId));
+  const chatHistory = await db
+    .select()
+    .from(chats)
+    .where(eq(chats.connectionId, connectionId))
+    .orderBy(chats.createdAt);
   return chatHistory;
 }
