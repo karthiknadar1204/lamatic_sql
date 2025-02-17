@@ -74,7 +74,10 @@ export async function submitChat(formData) {
       getPreviousChats(connectionId),
       getQueryEmbeddings(userInput, connectionId),
       taskManager([
-        { role: 'system', content: 'Initial context' },
+        { 
+          role: 'system', 
+          content: 'Initial context. Direct questions about counts, totals, or current state should be analyzed directly.' 
+        },
         { role: 'user', content: userInput }
       ])
     ]);
@@ -87,7 +90,22 @@ export async function submitChat(formData) {
     const databaseContext = formatDatabaseContext(embeddingsData);
     
     let response;
-    if (taskAction.next === 'inquire') {
+    // Check if the question is a direct query that doesn't need clarification
+    const isDirectQuery = userInput.toLowerCase().match(/^(how many|what|who|tell me|show|list|count|get|find)/i);
+    
+    if (taskAction.next === 'inquire' && isDirectQuery) {
+      // Override to analyze for direct questions
+      const researchResult = await researcher([
+        { role: 'system', content: databaseContext },
+        ...chatHistory,
+        { role: 'user', content: userInput }
+      ]);
+
+      response = { 
+        type: 'analysis',
+        data: researchResult 
+      };
+    } else if (taskAction.next === 'inquire') {
       response = await inquire([
         { role: 'system', content: databaseContext },
         ...chatHistory,
@@ -102,7 +120,7 @@ export async function submitChat(formData) {
       ]);
 
       response = { 
-        type: isVisualization ? 'visualization' : 'analysis', 
+        type: isVisualization ? 'visualization' : 'analysis',
         data: researchResult 
       };
     }
@@ -127,7 +145,7 @@ export async function submitChat(formData) {
       connectionId
     };
   } catch (error) {
-    console.error('Error in chat submission:', error);
-    return { error: 'Failed to process chat' };
+    console.error('Error in submitChat:', error);
+    throw error;
   }
 }

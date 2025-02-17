@@ -6,6 +6,7 @@ import { index } from "@/lib/pinecone";
 import { db } from "@/configs/db";
 import { eq, and } from "drizzle-orm";
 import { chats, dbConnections } from "@/configs/schema";
+import { chunkTableData } from "@/lib/utils/tokenManagement";
 
 const CHUNK_SIZE = 4000;
 
@@ -36,7 +37,6 @@ function chunkData(data) {
 }
 
 export async function embeddings(data) {
-  console.log(data);
   const user = await currentUser();
   if (!user) return null;
 
@@ -45,59 +45,82 @@ export async function embeddings(data) {
   });
 
   try {
+    // Process schema first
     const schemaText = data.tables.map(t => ({
       tableName: t.tableName,
       columns: t.columns.map(c => `${c.column_name} (${c.data_type})`).join(', ')
     }));
-
-    const dataChunks = chunkData(data.tables.map(t => ({
-      tableName: t.tableName,
-      sampleData: t.data
-    })));
-
 
     const schemaEmbedding = await openai.embeddings.create({
       model: "text-embedding-ada-002",
       input: JSON.stringify(schemaText)
     });
 
+    // Process table data in chunks
+    async function* generateTableChunks() {
+      for (const table of data.tables) {
+        const chunks = chunkTableData(table.data);
+        
+        for (let i = 0; i < chunks.length; i++) {
+          const chunkData = {
+            tableName: table.tableName,
+            sampleData: chunks[i]
+          };
 
-    const dataEmbeddings = await Promise.all(
-      dataChunks.map(async (chunk, index) => {
-        const embedding = await openai.embeddings.create({
-          model: "text-embedding-ada-002",
-          input: JSON.stringify(chunk)
-        });
-        return {
-          id: `data-${String(data.id)}-${index}`,
-          values: embedding.data[0].embedding,
-          metadata: {
-            type: 'data',
-            connectionId: String(data.id),
-            connectionName: data.connectionName,
-            timestamp: new Date().toISOString(),
-            data: JSON.stringify(chunk)
-          }
-        };
-      })
-    );
-     
-    await index.upsert([
-      {
-        id: `schema-${String(data.id)}`,
-        values: schemaEmbedding.data[0].embedding,
-        metadata: {
-          type: 'schema',
-          connectionId: String(data.id),
-          connectionName: data.connectionName,
-          timestamp: new Date().toISOString(),
-          schema: JSON.stringify(schemaText)
-        },
+          const embedding = await openai.embeddings.create({
+            model: "text-embedding-ada-002",
+            input: JSON.stringify(chunkData)
+          });
+
+          yield {
+            id: `data-${String(data.id)}-${table.tableName}-${i}`,
+            values: embedding.data[0].embedding,
+            metadata: {
+              type: 'data',
+              connectionId: String(data.id),
+              connectionName: data.connectionName,
+              tableName: table.tableName,
+              chunkIndex: i,
+              timestamp: new Date().toISOString(),
+              data: JSON.stringify(chunkData)
+            }
+          };
+        }
+      }
+    }
+
+    // Process chunks in batches
+    const BATCH_SIZE = 10;
+    let currentBatch = [];
+    
+    for await (const embeddingData of generateTableChunks()) {
+      currentBatch.push(embeddingData);
+      
+      if (currentBatch.length >= BATCH_SIZE) {
+        await index.upsert(currentBatch);
+        currentBatch = [];
+      }
+    }
+
+    // Upload any remaining embeddings
+    if (currentBatch.length > 0) {
+      await index.upsert(currentBatch);
+    }
+
+    // Upload schema embedding
+    await index.upsert([{
+      id: `schema-${String(data.id)}`,
+      values: schemaEmbedding.data[0].embedding,
+      metadata: {
+        type: 'schema',
+        connectionId: String(data.id),
+        connectionName: data.connectionName,
+        timestamp: new Date().toISOString(),
+        schema: JSON.stringify(schemaText)
       },
-      ...dataEmbeddings
-    ]);
-
+    }]);
     console.log("Pinecone upsert successful for schema and all data chunks");
+
     return true;
   } catch (error) {
     console.error("Error generating embeddings:", error);
@@ -123,23 +146,57 @@ export async function getQueryEmbeddings(message, connectionId) {
 
     const queryResult = await index.query({
       vector: questionEmbedding.data[0].embedding,
-      topK: 10,
-      filter: {
-        connectionId: { $eq: String(connectionId) }
-      },
-      includeMetadata: true,
-      includeValues: true
+      filter: { connectionId: String(connectionId) },
+      topK: 5,
+      includeMetadata: true
     });
 
-    const schemaInfo = queryResult.matches.find(m => m.metadata.type === 'schema')?.metadata?.schema || "[]";
-    const dataInfo = queryResult.matches.find(m => m.metadata.type === 'data')?.metadata?.data || "[]";
+    const matches = queryResult.matches || [];
+    
+    // Separate schema and data matches
+    const schemaInfo = matches.find(m => m.metadata?.type === 'schema')?.metadata?.schema;
+    const dataInfo = matches
+      .filter(m => m.metadata?.type === 'data')
+      .map(m => m.metadata?.data)
+      .filter(Boolean);
+
+    // Ensure proper parsing and structure
+    let parsedSchema = [];
+    try {
+      parsedSchema = schemaInfo ? JSON.parse(schemaInfo) : [];
+      // Ensure it's an array
+      if (!Array.isArray(parsedSchema)) {
+        parsedSchema = [];
+      }
+    } catch (e) {
+      console.error('Error parsing schema:', e);
+      parsedSchema = [];
+    }
+
+    let parsedData = [];
+    try {
+      // Combine and parse all data matches
+      const combinedData = dataInfo.map(info => {
+        try {
+          return JSON.parse(info);
+        } catch (e) {
+          return null;
+        }
+      }).filter(Boolean);
+
+      // Ensure each item has required structure
+      parsedData = combinedData.map(item => ({
+        tableName: item.tableName || 'Unknown Table',
+        sampleData: Array.isArray(item.sampleData) ? item.sampleData : []
+      }));
+    } catch (e) {
+      console.error('Error parsing data:', e);
+      parsedData = [];
+    }
 
     return {
-      schema: JSON.parse(schemaInfo || "[]"),
-      sampleData: JSON.parse(dataInfo || "[]").map(table => ({
-        tableName: table.tableName,
-        sampleData: table.sampleData
-      }))
+      schema: parsedSchema,
+      sampleData: parsedData
     };
   } catch (error) {
     console.error("Error getting embeddings:", error);
