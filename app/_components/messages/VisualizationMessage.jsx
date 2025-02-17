@@ -7,7 +7,9 @@ import ScatterPlot from '../charts/ScatterPlot';
 
 export const VisualizationMessage = ({ response }) => {
   const content = response.data?.data?.content || response.data?.content || response.content;
-  const visualizations = response.data?.data?.visualization || response.data?.visualization || response.visualization;
+  const visualizations =  response.data?.visualization 
+  // || response.visualization|| response.data?.visualization?.data || response.data?.data?.visualization ||;
+  console.log("visualizations", visualizations)
 
   if (!content || !visualizations) {
     return null;

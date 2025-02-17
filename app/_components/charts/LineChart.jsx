@@ -1,137 +1,82 @@
 'use client'
 
-import { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+import {
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 const LineChart = ({ data, width = 600, height = 400, margin = { top: 20, right: 30, bottom: 60, left: 60 } }) => {
-  const svgRef = useRef(null);
+  if (!data || !data.length) return null;
 
-  useEffect(() => {
-    if (!data || !data.length) return;
-
-    // Clear previous chart
-    d3.select(svgRef.current).selectAll('*').remove();
-
-    const svg = d3.select(svgRef.current)
-      .attr('width', width)
-      .attr('height', height);
-
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-
-    // Get dynamic keys
-    const keys = Object.keys(data[0]);
-    const xKey = keys[0];
-    const yKey = keys[1];
-
-    // Format data
-    const formattedData = data.map(d => ({
-      x: d[xKey],
-      y: Number(d[yKey]) || 0,
-      label: d[xKey],
-      value: Number(d[yKey]) || 0
+  // Sort data by value for better visualization
+  const formattedData = [...data]
+    .sort((a, b) => b.value - a.value)
+    .map(d => ({
+      name: d.label,
+      value: Number(d.value) || 0
     }));
 
-    // Create scales
-    const xScale = d3.scalePoint()
-      .domain(formattedData.map(d => d.x))
-      .range([0, innerWidth])
-      .padding(0.5);
-
-    const yScale = d3.scaleLinear()
-      .domain([0, d3.max(formattedData, d => d.y) * 1.1])
-      .range([innerHeight, 0]);
-
-    // Create line generator
-    const line = d3.line()
-      .x(d => xScale(d.x))
-      .y(d => yScale(d.y))
-      .curve(d3.curveMonotoneX);
-
-    // Create container group
-    const g = svg.append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
-
-    // Add the line path
-    g.append('path')
-      .datum(formattedData)
-      .attr('fill', 'none')
-      .attr('stroke', 'var(--chart-1, #ef4444)')
-      .attr('stroke-width', 2)
-      .attr('d', line);
-
-    // Add dots
-    g.selectAll('.dot')
-      .data(formattedData)
-      .enter()
-      .append('circle')
-      .attr('class', 'dot')
-      .attr('cx', d => xScale(d.x))
-      .attr('cy', d => yScale(d.y))
-      .attr('r', 5)
-      .attr('fill', 'var(--chart-1, #ef4444)')
-      .attr('opacity', 0.7)
-      .on('mouseover', function(event, d) {
-        d3.select(this).attr('opacity', 1);
-        
-        const tooltip = d3.select('body').append('div')
-          .attr('class', 'tooltip')
-          .style('position', 'absolute')
-          .style('background-color', 'white')
-          .style('padding', '8px')
-          .style('border-radius', '4px')
-          .style('box-shadow', '0 2px 4px rgba(0,0,0,0.1)')
-          .style('opacity', 0);
-
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', .9);
-        
-        tooltip.html(`
-          <strong>${d.label}</strong><br/>
-          ${xKey}: ${d.x}<br/>
-          ${yKey}: ${d.y}
-        `)
-          .style('left', (event.pageX + 10) + 'px')
-          .style('top', (event.pageY - 28) + 'px');
-      })
-      .on('mouseout', function() {
-        d3.select(this).attr('opacity', 0.7);
-        d3.selectAll('.tooltip').remove();
-      });
-
-    // Add axes
-    g.append('g')
-      .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(xScale))
-      .selectAll('text')
-      .attr('transform', 'rotate(-45)')
-      .style('text-anchor', 'end')
-      .attr('dx', '-0.8em')
-      .attr('dy', '0.15em');
-
-    g.append('g')
-      .call(d3.axisLeft(yScale));
-
-    // Add axis labels
-    g.append('text')
-      .attr('x', innerWidth / 2)
-      .attr('y', innerHeight + margin.bottom - 5)
-      .attr('text-anchor', 'middle')
-      .text(data.xAxis || xKey);
-
-    g.append('text')
-      .attr('transform', 'rotate(-90)')
-      .attr('y', -margin.left + 15)
-      .attr('x', -innerHeight / 2)
-      .attr('text-anchor', 'middle')
-      .text(data.yAxis || yKey);
-
-  }, [data, width, height, margin]);
-
   return (
-    <div className="relative">
-      <svg ref={svgRef}></svg>
+    <div style={{ width: '100%', height: height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsLineChart
+          data={formattedData}
+          margin={margin}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis
+            dataKey="name"
+            angle={-45}
+            textAnchor="end"
+            height={60}
+            interval={0}
+            label={{ value: data.xAxis || "Categories", position: 'bottom', offset: 40 }}
+          />
+          <YAxis
+            domain={[0, 'auto']}
+            label={{ 
+              value: data.yAxis || "Values",
+              angle: -90,
+              position: 'left',
+              offset: 20
+            }}
+          />
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <div className="bg-white p-2 border rounded shadow-sm">
+                  <p className="font-medium">{label}</p>
+                  <p>{`${data.yAxis || 'Value'}: ${payload[0].value}`}</p>
+                </div>
+              );
+            }}
+          />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="value"
+            stroke="var(--chart-1, #ef4444)"
+            strokeWidth={2}
+            dot={{
+              fill: "var(--chart-1, #ef4444)",
+              r: 5,
+              strokeWidth: 0
+            }}
+            activeDot={{
+              r: 7,
+              strokeWidth: 0
+            }}
+            connectNulls
+          />
+        </RechartsLineChart>
+      </ResponsiveContainer>
     </div>
   );
 };

@@ -47,6 +47,10 @@ const Message = ({ message, onSubmit, isLoading }) => {
   if (messageType === 'clarification') {
     parsedResponse.connectionId = message.connectionId
   }
+  console.log("parsedResponse", parsedResponse)
+  console.log("messageType", messageType)
+  console.log("message", message)
+  console.log("response.data?.visualization?.data", parsedResponse.data?.visualization?.data)
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-4xl mx-auto animate-fadeIn">

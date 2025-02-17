@@ -5,13 +5,16 @@ export const AnalysisMessage = ({ response }) => {
     return null;
   }
 
+  // Ensure details is an array, if not convert to array or use empty array as fallback
+  const details = Array.isArray(content.details) ? content.details : [content.details].filter(Boolean);
+
   return (
     <div className="bg-gray-100 rounded-lg p-4 max-w-[80%]">
       <div className="space-y-3">
         <p className="font-medium">{content.summary}</p>
         
         <ul className="list-disc pl-4 space-y-1">
-          {content.details.map((detail, index) => (
+          {details.map((detail, index) => (
             <li key={index} className="text-sm text-gray-700">{detail}</li>
           ))}
         </ul>
