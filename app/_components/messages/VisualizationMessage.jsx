@@ -6,12 +6,12 @@ import BarChart from '../charts/BarChart';
 import ScatterPlot from '../charts/ScatterPlot';
 
 export const VisualizationMessage = ({ response }) => {
-  const content = response.data?.data?.content || response.data?.content || response.content;
-  const visualizations =  response.data?.visualization 
-  // || response.visualization|| response.data?.visualization?.data || response.data?.data?.visualization ||;
-  console.log("visualizations", visualizations)
+  // Correctly destructure the nested visualization data
+  const content = response.data?.content;
+  const visualization = response.data?.visualization;
 
-  if (!content || !visualizations) {
+  if (!content || !visualization) {
+    console.log("Missing content or visualization data:", { content, visualization });
     return null;
   }
 
@@ -42,17 +42,9 @@ export const VisualizationMessage = ({ response }) => {
           ))}
         </ul>
       </div>
-      {Array.isArray(visualizations) ? (
-        visualizations.map((viz, index) => (
-          <div key={index} className="mt-4 bg-white p-4 rounded-lg shadow-sm">
-            {renderChart(viz)}
-          </div>
-        ))
-      ) : (
-        <div className="mt-4 bg-white p-4 rounded-lg shadow-sm">
-          {renderChart(visualizations)}
-        </div>
-      )}
+      <div className="mt-4 bg-white p-4 rounded-lg shadow-sm">
+        {renderChart(visualization)}
+      </div>
     </div>
   );
 };
