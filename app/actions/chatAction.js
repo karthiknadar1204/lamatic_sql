@@ -69,7 +69,7 @@ export async function submitChat(formData) {
   }
 
   try {
-    // Run all initial data fetching in parallel
+
     const [previousChats, embeddingsData, taskAction] = await Promise.all([
       getPreviousChats(connectionId),
       getQueryEmbeddings(userInput, connectionId),
@@ -90,11 +90,11 @@ export async function submitChat(formData) {
     const databaseContext = formatDatabaseContext(embeddingsData);
     
     let response;
-    // Check if the question is a direct query that doesn't need clarification
+
     const isDirectQuery = userInput.toLowerCase().match(/^(how many|what|who|tell me|show|list|count|get|find)/i);
     
     if (taskAction.next === 'inquire' && isDirectQuery) {
-      // Override to analyze for direct questions
+
       const researchResult = await researcher([
         { role: 'system', content: databaseContext },
         ...chatHistory,
@@ -125,7 +125,7 @@ export async function submitChat(formData) {
       };
     }
 
-    // Run background tasks without awaiting
+
     runInBackground(async () => {
       await Promise.all([
         evaluateResponse({

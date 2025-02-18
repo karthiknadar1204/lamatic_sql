@@ -45,7 +45,6 @@ export async function embeddings(data) {
   });
 
   try {
-    // Process schema first
     const schemaText = data.tables.map(t => ({
       tableName: t.tableName,
       columns: t.columns.map(c => `${c.column_name} (${c.data_type})`).join(', ')
@@ -56,7 +55,6 @@ export async function embeddings(data) {
       input: JSON.stringify(schemaText)
     });
 
-    // Process table data in chunks
     async function* generateTableChunks() {
       for (const table of data.tables) {
         const chunks = chunkTableData(table.data);
@@ -89,7 +87,6 @@ export async function embeddings(data) {
       }
     }
 
-    // Process chunks in batches
     const BATCH_SIZE = 10;
     let currentBatch = [];
     
@@ -102,12 +99,10 @@ export async function embeddings(data) {
       }
     }
 
-    // Upload any remaining embeddings
     if (currentBatch.length > 0) {
       await index.upsert(currentBatch);
     }
 
-    // Upload schema embedding
     await index.upsert([{
       id: `schema-${String(data.id)}`,
       values: schemaEmbedding.data[0].embedding,
@@ -153,18 +148,15 @@ export async function getQueryEmbeddings(message, connectionId) {
 
     const matches = queryResult.matches || [];
     
-    // Separate schema and data matches
     const schemaInfo = matches.find(m => m.metadata?.type === 'schema')?.metadata?.schema;
     const dataInfo = matches
       .filter(m => m.metadata?.type === 'data')
       .map(m => m.metadata?.data)
       .filter(Boolean);
 
-    // Ensure proper parsing and structure
     let parsedSchema = [];
     try {
       parsedSchema = schemaInfo ? JSON.parse(schemaInfo) : [];
-      // Ensure it's an array
       if (!Array.isArray(parsedSchema)) {
         parsedSchema = [];
       }
@@ -175,7 +167,6 @@ export async function getQueryEmbeddings(message, connectionId) {
 
     let parsedData = [];
     try {
-      // Combine and parse all data matches
       const combinedData = dataInfo.map(info => {
         try {
           return JSON.parse(info);
@@ -184,7 +175,6 @@ export async function getQueryEmbeddings(message, connectionId) {
         }
       }).filter(Boolean);
 
-      // Ensure each item has required structure
       parsedData = combinedData.map(item => ({
         tableName: item.tableName || 'Unknown Table',
         sampleData: Array.isArray(item.sampleData) ? item.sampleData : []

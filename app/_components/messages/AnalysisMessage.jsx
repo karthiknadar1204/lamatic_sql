@@ -5,7 +5,7 @@ export const AnalysisMessage = ({ response }) => {
     return null;
   }
 
-  // Ensure details is an array, if not convert to array or use empty array as fallback
+
   const details = Array.isArray(content.details) ? content.details : [content.details].filter(Boolean);
 
   return (

@@ -6,7 +6,7 @@ import BarChart from '../charts/BarChart';
 import ScatterPlot from '../charts/ScatterPlot';
 
 export const VisualizationMessage = ({ response }) => {
-  // Correctly destructure the nested visualization data
+
   const content = response.data?.content;
   const visualization = response.data?.visualization;
 
